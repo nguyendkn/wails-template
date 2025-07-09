@@ -1,0 +1,145 @@
+# Dependabot configuration for automated dependency updates
+# Groups package upgrades into single PRs to avoid spam
+
+version: 2
+updates:
+  # Go modules dependency updates
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 5
+    groups:
+      # Group all Go dependencies into a single PR
+      go-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Separate group for major updates (more careful review needed)
+      go-major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+    commit-message:
+      prefix: "deps(go)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+      - "automated"
+    reviewers:
+      - "dknguyen2304"
+    assignees:
+      - "dknguyen2304"
+
+  # Frontend npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 5
+    groups:
+      # Group all frontend dependencies
+      frontend-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@types/*"  # Keep type definitions separate
+        update-types:
+          - "minor"
+          - "patch"
+      # Group TypeScript type definitions
+      typescript-types:
+        patterns:
+          - "@types/*"
+          - "typescript"
+          - "ts-*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Major updates separate for careful review
+      frontend-major-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+    commit-message:
+      prefix: "deps(frontend)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "automated"
+    reviewers:
+      - "dknguyen2304"
+    assignees:
+      - "dknguyen2304"
+
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 3
+    groups:
+      # Group all GitHub Actions updates
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+    commit-message:
+      prefix: "deps(actions)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    reviewers:
+      - "dknguyen2304"
+    assignees:
+      - "dknguyen2304"
+
+  # Docker dependencies (if using Dockerfile)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "Asia/Ho_Chi_Minh"
+    open-pull-requests-limit: 3
+    groups:
+      # Group Docker base image updates
+      docker-images:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+          - "major"
+    commit-message:
+      prefix: "deps(docker)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    reviewers:
+      - "dknguyen2304"
+    assignees:
+      - "dknguyen2304"

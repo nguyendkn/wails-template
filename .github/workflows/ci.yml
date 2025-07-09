@@ -1,0 +1,261 @@
+name: CI/CD - Build and Release
+
+# Trigger only on new version tags to avoid unnecessary builds
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Matches v1.0.0, v2.1.3, etc.
+  workflow_dispatch:  # Allow manual trigger for testing
+
+env:
+  GO_VERSION: '1.21'
+  NODE_VERSION: '18'
+  WAILS_VERSION: 'v2.10.1'
+
+jobs:
+  # Build job for multiple platforms with UPX optimization
+  build:
+    name: Build for ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows builds
+          - platform: windows-amd64
+            os: windows-latest
+            goos: windows
+            goarch: amd64
+            extension: .exe
+            upx_args: --best --lzma
+          - platform: windows-arm64
+            os: windows-latest
+            goos: windows
+            goarch: arm64
+            extension: .exe
+            upx_args: --best --lzma
+
+          # macOS builds
+          - platform: darwin-amd64
+            os: macos-latest
+            goos: darwin
+            goarch: amd64
+            extension: ''
+            upx_args: --best
+          - platform: darwin-arm64
+            os: macos-latest
+            goos: darwin
+            goarch: arm64
+            extension: ''
+            upx_args: --best
+
+          # Linux builds
+          - platform: linux-amd64
+            os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            extension: ''
+            upx_args: --best --lzma
+          - platform: linux-arm64
+            os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+            extension: ''
+            upx_args: --best --lzma
+
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper versioning
+
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      # Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # Install frontend dependencies
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Install Wails
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
+
+      # Install UPX for binary compression
+      - name: Install UPX (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/upx/upx/releases/download/v4.2.1/upx-4.2.1-win64.zip" -OutFile "upx.zip"
+          Expand-Archive -Path "upx.zip" -DestinationPath "."
+          Move-Item "upx-4.2.1-win64\upx.exe" "upx.exe"
+          echo "$PWD" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install UPX (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install upx
+
+      - name: Install UPX (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y upx
+
+      # Get version from tag
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="dev-$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      # Build with Wails
+      - name: Build application
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 1
+        run: |
+          wails build \
+            -platform ${{ matrix.goos }}/${{ matrix.goarch }} \
+            -clean \
+            -ldflags "-s -w -X main.version=${{ steps.version.outputs.version }}" \
+            -o "wails-template-${{ matrix.platform }}${{ matrix.extension }}"
+
+      # Optimize binary with UPX (skip for macOS arm64 due to compatibility issues)
+      - name: Optimize binary with UPX
+        if: matrix.platform != 'darwin-arm64'
+        shell: bash
+        run: |
+          BINARY_PATH="build/bin/wails-template-${{ matrix.platform }}${{ matrix.extension }}"
+          if [ -f "$BINARY_PATH" ]; then
+            echo "Original size: $(du -h "$BINARY_PATH" | cut -f1)"
+            upx ${{ matrix.upx_args }} "$BINARY_PATH" || echo "UPX compression failed, continuing with uncompressed binary"
+            echo "Compressed size: $(du -h "$BINARY_PATH" | cut -f1)"
+          else
+            echo "Binary not found at $BINARY_PATH"
+            ls -la build/bin/
+          fi
+
+      # Create release archive
+      - name: Create release archive
+        shell: bash
+        run: |
+          cd build/bin
+          BINARY_NAME="wails-template-${{ matrix.platform }}${{ matrix.extension }}"
+          ARCHIVE_NAME="wails-template-${{ steps.version.outputs.version }}-${{ matrix.platform }}"
+
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            7z a "${ARCHIVE_NAME}.zip" "$BINARY_NAME"
+            echo "archive=${ARCHIVE_NAME}.zip" >> $GITHUB_ENV
+          else
+            tar -czf "${ARCHIVE_NAME}.tar.gz" "$BINARY_NAME"
+            echo "archive=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
+          fi
+
+      # Upload build artifacts
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wails-template-${{ matrix.platform }}
+          path: build/bin/${{ env.archive }}
+          retention-days: 30
+
+  # Release job - runs after all builds complete
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      # Checkout for release notes
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Download all build artifacts
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Get version from tag
+      - name: Get version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # Generate release notes
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "## 🚀 Release ${{ steps.version.outputs.version }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### 📦 Downloads" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "Choose the appropriate binary for your platform:" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- **Windows (x64)**: \`wails-template-${{ steps.version.outputs.version }}-windows-amd64.zip\`" >> release_notes.md
+          echo "- **Windows (ARM64)**: \`wails-template-${{ steps.version.outputs.version }}-windows-arm64.zip\`" >> release_notes.md
+          echo "- **macOS (Intel)**: \`wails-template-${{ steps.version.outputs.version }}-darwin-amd64.tar.gz\`" >> release_notes.md
+          echo "- **macOS (Apple Silicon)**: \`wails-template-${{ steps.version.outputs.version }}-darwin-arm64.tar.gz\`" >> release_notes.md
+          echo "- **Linux (x64)**: \`wails-template-${{ steps.version.outputs.version }}-linux-amd64.tar.gz\`" >> release_notes.md
+          echo "- **Linux (ARM64)**: \`wails-template-${{ steps.version.outputs.version }}-linux-arm64.tar.gz\`" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### ✨ Features" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- 🔐 Authentication system with login/logout" >> release_notes.md
+          echo "- ⚙️ Environment configuration management" >> release_notes.md
+          echo "- 🎨 Modern UI with shadcn/ui components" >> release_notes.md
+          echo "- 🚀 Production-ready Wails template" >> release_notes.md
+          echo "- 📦 UPX-optimized binaries for smaller size" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### 🔧 Technical Details" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- **Go Version**: ${{ env.GO_VERSION }}" >> release_notes.md
+          echo "- **Wails Version**: ${{ env.WAILS_VERSION }}" >> release_notes.md
+          echo "- **Node.js Version**: ${{ env.NODE_VERSION }}" >> release_notes.md
+          echo "- **Compression**: UPX optimized for reduced file size" >> release_notes.md
+
+      # Create GitHub release
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Release ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/*/wails-template-${{ steps.version.outputs.version }}-*.zip
+            artifacts/*/wails-template-${{ steps.version.outputs.version }}-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Notify on success
+      - name: Notify success
+        run: |
+          echo "✅ Release ${{ steps.version.outputs.version }} created successfully!"
+          echo "📦 Artifacts uploaded and ready for download"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.version }}"
