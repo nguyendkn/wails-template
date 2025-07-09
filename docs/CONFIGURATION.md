@@ -11,18 +11,16 @@ The application uses a comprehensive configuration system that supports:
 - Hot reload support in development
 - Centralized configuration management
 
-## Environment Files
+## Configuration Files
 
 ### File Structure
 
 ```
-.env.development    # Development environment
-.env.staging       # Staging environment  
-.env.production    # Production environment
-.env.example       # Template file
+config.ini         # Single configuration file for all environments
+config.ini.example # Template file
 ```
 
-### Environment Variables
+### Configuration Sections
 
 #### Application Configuration
 
@@ -277,13 +275,13 @@ if (!validation.isValid) {
 ### From Hard-coded Values
 
 1. Identify hard-coded configuration values
-2. Add corresponding environment variables
+2. Add corresponding configuration keys to INI sections
 3. Update code to use configuration system
 4. Test with different environments
 
 ### Adding New Configuration
 
-1. Add to environment files (.env.*)
+1. Add to configuration file (config.ini)
 2. Update Go config types
 3. Update TypeScript types
 4. Add validation rules
@@ -295,16 +293,19 @@ See the `examples/` directory for complete configuration examples for different 
 
 ## Quick Start
 
-1. **Copy environment template**:
+1. **Copy configuration template**:
    ```bash
-   cp .env.example .env.development
+   cp config.ini.example config.ini
    ```
 
 2. **Update configuration values**:
-   ```bash
-   # Edit .env.development
-   API_BASE_URL=https://your-api-domain.com/api/v3.1
-   APP_NAME=Your App Name
+   ```ini
+   # Edit config.ini
+   [api]
+   base_url = https://your-api-domain.com/api/v3.1
+
+   [app]
+   name = Your App Name
    ```
 
 3. **Run application**:

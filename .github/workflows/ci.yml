@@ -127,81 +127,156 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-      # Create environment file for build from GitHub Variables
-      - name: Create environment file
+      # Create configuration file for build from GitHub Variables
+      - name: Create configuration file
         run: |
-          cat > .env << EOF
-          APP_ENV=development
-          APP_VERSION=${{ steps.version.outputs.version }}
+          cat > config.ini << 'EOF'
+          # Application Configuration
+          # This file contains configuration values for the application
+          # The APP_ENV environment variable determines which settings to use
+
+          [app]
+          # Application Environment
+          environment = production
+          name = CSmart
+          version = ${{ steps.version.outputs.version }}
+          debug = false
+
+          [api]
+          # API Configuration
+          base_url = https://your-api-domain.com/api/v3.1
+          timeout = 30
+          retry_count = 3
+          retry_delay = 1000
+          user_agent = CSmart-Wails/1.0
+          max_idle_conn = 10
+
+          [auth]
+          # Authentication
+          token_expiry = 3600
+          refresh_threshold = 300
+          max_login_attempts = 5
+          lockout_duration = 900
+          session_timeout = 86400
+          remember_me_duration = 2592000
+
+          [log]
+          # Logging
+          level = info
+          format = json
+          output = console
+          file_path = logs/app.log
+          max_size = 100
+          max_backups = 3
+          max_age = 28
+          compress = true
+
+          [database]
+          # Database (if needed in future)
+          host = localhost
+          port = 5432
+          name = csmart_prod
+          username =
+          password =
+          ssl_mode = require
+          max_open_conns = 25
+          max_idle_conns = 5
+          conn_lifetime = 300
+
+          [security]
+          # Security
+          cors_enabled = true
+          cors_origins = https://yourdomain.com
+          rate_limit_enabled = true
+          rate_limit_rps = 100
+          rate_limit_burst = 200
+          csrf_enabled = true
+          csrf_secret =
+
+          [window]
+          # Window Configuration
+          width = 1200
+          height = 800
+          resizable = true
+          fullscreen = false
+          maximized = false
+          minimized = false
+          always_on_top = false
+
+          [cache]
+          # Performance (production)
+          enabled = true
+          ttl = 3600
+          max_size = 100
+          max_items = 10000
+          compression_enabled = true
+          eviction_policy = lru
+
+          [development]
+          # Development specific (disabled in production)
+          hot_reload = false
+          dev_tools = false
+          mock_api = false
           EOF
 
-          # Add GitHub Variables if they exist
+          # Override with GitHub Variables if they exist
           if [ -n "${{ vars.APP_NAME }}" ]; then
-            echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
+            sed -i "s/name = .*/name = ${{ vars.APP_NAME }}/" config.ini
           fi
           if [ -n "${{ vars.APP_DEBUG }}" ]; then
-            echo "APP_DEBUG=${{ vars.APP_DEBUG }}" >> .env
+            sed -i "s/debug = .*/debug = ${{ vars.APP_DEBUG }}/" config.ini
           fi
           if [ -n "${{ vars.API_BASE_URL }}" ]; then
-            echo "API_BASE_URL=${{ vars.API_BASE_URL }}" >> .env
+            sed -i "s|base_url = .*|base_url = ${{ vars.API_BASE_URL }}|" config.ini
           fi
           if [ -n "${{ vars.API_TIMEOUT }}" ]; then
-            echo "API_TIMEOUT=${{ vars.API_TIMEOUT }}" >> .env
+            sed -i "s/timeout = .*/timeout = ${{ vars.API_TIMEOUT }}/" config.ini
           fi
           if [ -n "${{ vars.API_RETRY_COUNT }}" ]; then
-            echo "API_RETRY_COUNT=${{ vars.API_RETRY_COUNT }}" >> .env
+            sed -i "s/retry_count = .*/retry_count = ${{ vars.API_RETRY_COUNT }}/" config.ini
           fi
           if [ -n "${{ vars.API_RETRY_DELAY }}" ]; then
-            echo "API_RETRY_DELAY=${{ vars.API_RETRY_DELAY }}" >> .env
+            sed -i "s/retry_delay = .*/retry_delay = ${{ vars.API_RETRY_DELAY }}/" config.ini
           fi
           if [ -n "${{ vars.AUTH_TOKEN_EXPIRY }}" ]; then
-            echo "AUTH_TOKEN_EXPIRY=${{ vars.AUTH_TOKEN_EXPIRY }}" >> .env
+            sed -i "s/token_expiry = .*/token_expiry = ${{ vars.AUTH_TOKEN_EXPIRY }}/" config.ini
           fi
           if [ -n "${{ vars.AUTH_REFRESH_THRESHOLD }}" ]; then
-            echo "AUTH_REFRESH_THRESHOLD=${{ vars.AUTH_REFRESH_THRESHOLD }}" >> .env
+            sed -i "s/refresh_threshold = .*/refresh_threshold = ${{ vars.AUTH_REFRESH_THRESHOLD }}/" config.ini
           fi
           if [ -n "${{ vars.LOG_LEVEL }}" ]; then
-            echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> .env
+            sed -i "s/level = .*/level = ${{ vars.LOG_LEVEL }}/" config.ini
           fi
           if [ -n "${{ vars.LOG_FORMAT }}" ]; then
-            echo "LOG_FORMAT=${{ vars.LOG_FORMAT }}" >> .env
+            sed -i "s/format = .*/format = ${{ vars.LOG_FORMAT }}/" config.ini
           fi
           if [ -n "${{ vars.LOG_OUTPUT }}" ]; then
-            echo "LOG_OUTPUT=${{ vars.LOG_OUTPUT }}" >> .env
+            sed -i "s/output = .*/output = ${{ vars.LOG_OUTPUT }}/" config.ini
           fi
           if [ -n "${{ vars.WINDOW_WIDTH }}" ]; then
-            echo "WINDOW_WIDTH=${{ vars.WINDOW_WIDTH }}" >> .env
+            sed -i "s/width = .*/width = ${{ vars.WINDOW_WIDTH }}/" config.ini
           fi
           if [ -n "${{ vars.WINDOW_HEIGHT }}" ]; then
-            echo "WINDOW_HEIGHT=${{ vars.WINDOW_HEIGHT }}" >> .env
+            sed -i "s/height = .*/height = ${{ vars.WINDOW_HEIGHT }}/" config.ini
           fi
           if [ -n "${{ vars.WINDOW_RESIZABLE }}" ]; then
-            echo "WINDOW_RESIZABLE=${{ vars.WINDOW_RESIZABLE }}" >> .env
+            sed -i "s/resizable = .*/resizable = ${{ vars.WINDOW_RESIZABLE }}/" config.ini
           fi
           if [ -n "${{ vars.WINDOW_FULLSCREEN }}" ]; then
-            echo "WINDOW_FULLSCREEN=${{ vars.WINDOW_FULLSCREEN }}" >> .env
+            sed -i "s/fullscreen = .*/fullscreen = ${{ vars.WINDOW_FULLSCREEN }}/" config.ini
           fi
           if [ -n "${{ vars.CORS_ENABLED }}" ]; then
-            echo "CORS_ENABLED=${{ vars.CORS_ENABLED }}" >> .env
+            sed -i "s/cors_enabled = .*/cors_enabled = ${{ vars.CORS_ENABLED }}/" config.ini
           fi
           if [ -n "${{ vars.CORS_ORIGINS }}" ]; then
-            echo "CORS_ORIGINS=${{ vars.CORS_ORIGINS }}" >> .env
+            sed -i "s/cors_origins = .*/cors_origins = ${{ vars.CORS_ORIGINS }}/" config.ini
           fi
           if [ -n "${{ vars.RATE_LIMIT_ENABLED }}" ]; then
-            echo "RATE_LIMIT_ENABLED=${{ vars.RATE_LIMIT_ENABLED }}" >> .env
-          fi
-          if [ -n "${{ vars.HOT_RELOAD }}" ]; then
-            echo "HOT_RELOAD=${{ vars.HOT_RELOAD }}" >> .env
-          fi
-          if [ -n "${{ vars.DEV_TOOLS }}" ]; then
-            echo "DEV_TOOLS=${{ vars.DEV_TOOLS }}" >> .env
-          fi
-          if [ -n "${{ vars.MOCK_API }}" ]; then
-            echo "MOCK_API=${{ vars.MOCK_API }}" >> .env
+            sed -i "s/rate_limit_enabled = .*/rate_limit_enabled = ${{ vars.RATE_LIMIT_ENABLED }}/" config.ini
           fi
 
-          echo "Generated .env file:"
-          cat .env
+          echo "Generated config.ini file:"
+          cat config.ini
 
       # Install UPX for binary compression
       - name: Install UPX (Windows)

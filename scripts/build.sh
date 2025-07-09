@@ -106,18 +106,18 @@ print_info "Building for environment: $ENVIRONMENT"
 # Check if required tools are installed
 check_dependencies() {
     print_info "Checking dependencies..."
-    
+
     if ! command -v wails &> /dev/null; then
         print_error "Wails is not installed. Please install it first."
         print_error "Visit: https://wails.io/docs/gettingstarted/installation"
         exit 1
     fi
-    
+
     if ! command -v go &> /dev/null; then
         print_error "Go is not installed. Please install it first."
         exit 1
     fi
-    
+
     if ! command -v pnpm &> /dev/null; then
         print_warning "pnpm is not installed. Trying npm..."
         if ! command -v npm &> /dev/null; then
@@ -125,7 +125,7 @@ check_dependencies() {
             exit 1
         fi
     fi
-    
+
     print_success "All dependencies are available"
 }
 
@@ -145,20 +145,18 @@ clean_build() {
 # Set environment variables
 set_environment() {
     print_info "Setting up environment variables for $ENVIRONMENT..."
-    
+
     export APP_ENV="$ENVIRONMENT"
-    
-    # Load environment-specific variables
-    ENV_FILE=".env.$ENVIRONMENT"
-    if [[ -f "$ENV_FILE" ]]; then
-        print_info "Loading environment file: $ENV_FILE"
-        set -a  # automatically export all variables
-        source "$ENV_FILE"
-        set +a
+
+    # Check for configuration file
+    CONFIG_FILE="config.ini"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        print_info "Configuration file found: $CONFIG_FILE"
+        print_info "Configuration will be loaded by the application at runtime"
     else
-        print_warning "Environment file $ENV_FILE not found"
+        print_warning "Configuration file $CONFIG_FILE not found"
     fi
-    
+
     # Set build-specific variables
     case $ENVIRONMENT in
         production)
@@ -181,24 +179,24 @@ build_frontend() {
         print_info "Skipping frontend build"
         return
     fi
-    
+
     print_info "Building frontend..."
     cd frontend
-    
+
     # Install dependencies
     if command -v pnpm &> /dev/null; then
         pnpm install
     else
         npm install
     fi
-    
+
     # Build frontend
     if command -v pnpm &> /dev/null; then
         pnpm run build
     else
         npm run build
     fi
-    
+
     cd ..
     print_success "Frontend build completed"
 }
@@ -206,16 +204,16 @@ build_frontend() {
 # Build application
 build_app() {
     print_info "Building Wails application..."
-    
+
     # Prepare build flags
     BUILD_FLAGS=""
     if [[ "$VERBOSE" == true ]]; then
         BUILD_FLAGS="$BUILD_FLAGS -v"
     fi
-    
+
     # Set output directory
     BUILD_FLAGS="$BUILD_FLAGS -o $OUTPUT_DIR"
-    
+
     # Environment-specific build flags
     case $ENVIRONMENT in
         production)
@@ -228,18 +226,18 @@ build_app() {
             BUILD_FLAGS="$BUILD_FLAGS -debug"
             ;;
     esac
-    
+
     # Execute build
     print_info "Executing: wails build $BUILD_FLAGS"
     wails build $BUILD_FLAGS
-    
+
     print_success "Application build completed"
 }
 
 # Post-build tasks
 post_build() {
     print_info "Running post-build tasks..."
-    
+
     # Create version info file
     VERSION_FILE="$OUTPUT_DIR/version.json"
     cat > "$VERSION_FILE" << EOF
@@ -251,16 +249,16 @@ post_build() {
   "gitBranch": "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
 }
 EOF
-    
+
     print_success "Version info created: $VERSION_FILE"
-    
-    # Copy environment file to build directory
-    ENV_FILE=".env.$ENVIRONMENT"
-    if [[ -f "$ENV_FILE" ]]; then
-        cp "$ENV_FILE" "$OUTPUT_DIR/"
-        print_success "Environment file copied to build directory"
+
+    # Copy configuration file to build directory
+    CONFIG_FILE="config.ini"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        cp "$CONFIG_FILE" "$OUTPUT_DIR/"
+        print_success "Configuration file copied to build directory"
     fi
-    
+
     # Set executable permissions (Unix-like systems)
     if [[ "$OSTYPE" != "msys" && "$OSTYPE" != "win32" ]]; then
         chmod +x "$OUTPUT_DIR"/*
@@ -272,17 +270,17 @@ EOF
 main() {
     print_info "Starting build process for $ENVIRONMENT environment"
     print_info "Output directory: $OUTPUT_DIR"
-    
+
     check_dependencies
     clean_build
     set_environment
     build_frontend
     build_app
     post_build
-    
+
     print_success "Build completed successfully!"
     print_info "Build artifacts are available in: $OUTPUT_DIR"
-    
+
     # Show build summary
     if [[ -d "$OUTPUT_DIR" ]]; then
         print_info "Build summary:"

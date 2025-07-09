@@ -126,17 +126,13 @@ REM Set environment variables
 echo [INFO] Setting up environment variables for %ENVIRONMENT%...
 set APP_ENV=%ENVIRONMENT%
 
-REM Load environment-specific variables
-set ENV_FILE=.env.%ENVIRONMENT%
-if exist "%ENV_FILE%" (
-    echo [INFO] Loading environment file: %ENV_FILE%
-    for /f "usebackq tokens=1,2 delims==" %%a in ("%ENV_FILE%") do (
-        if not "%%a"=="" if not "%%a:~0,1%"=="#" (
-            set %%a=%%b
-        )
-    )
+REM Check for configuration file
+set CONFIG_FILE=config.ini
+if exist "%CONFIG_FILE%" (
+    echo [INFO] Configuration file found: %CONFIG_FILE%
+    echo [INFO] Configuration will be loaded by the application at runtime
 ) else (
-    echo [WARNING] Environment file %ENV_FILE% not found
+    echo [WARNING] Configuration file %CONFIG_FILE% not found
 )
 
 REM Set build-specific variables
@@ -158,31 +154,31 @@ if "%SKIP_FRONTEND%"=="true" (
 ) else (
     echo [INFO] Building frontend...
     cd frontend
-    
+
     REM Install dependencies
     if "%USE_NPM%"=="true" (
         npm install
     ) else (
         pnpm install
     )
-    
+
     if errorlevel 1 (
         echo [ERROR] Frontend dependency installation failed
         exit /b 1
     )
-    
+
     REM Build frontend
     if "%USE_NPM%"=="true" (
         npm run build
     ) else (
         pnpm run build
     )
-    
+
     if errorlevel 1 (
         echo [ERROR] Frontend build failed
         exit /b 1
     )
-    
+
     cd ..
     echo [SUCCESS] Frontend build completed
 )

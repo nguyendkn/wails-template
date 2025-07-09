@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
+	"gopkg.in/ini.v1"
 )
 
 var (
-	validate *validator.Validate
-	instance *Config
+	validate  *validator.Validate
+	instance  *Config
+	iniConfig *ini.File
 )
 
 func init() {
@@ -24,31 +25,23 @@ func init() {
 	validate.RegisterValidation("semver", validateSemver)
 }
 
-// LoadConfig loads configuration from environment variables and .env files
+// LoadConfig loads configuration from INI files
 func LoadConfig() (*Config, error) {
 	if instance != nil {
 		return instance, nil
 	}
 
-	// Determine environment
-	env := Environment(getEnv("APP_ENV", "development"))
-
-	// Validate environment file exists
-	if err := CheckEnvironmentFile(env); err != nil {
-		fmt.Printf("Warning: %v\n", err)
+	// Determine environment from environment variable or default
+	env := Environment(os.Getenv("APP_ENV"))
+	if env == "" {
+		env = "development"
 	}
 
-	// Load environment file based on APP_ENV
-	envFile := fmt.Sprintf(".env.%s", env)
-	if _, err := os.Stat(envFile); err == nil {
-		if err := godotenv.Load(envFile); err != nil {
-			return nil, fmt.Errorf("failed to load %s: %w", envFile, err)
-		}
-	}
-
-	// Also try to load .env file as fallback
-	if _, err := os.Stat(".env"); err == nil {
-		godotenv.Load(".env")
+	// Load single INI configuration file
+	var err error
+	iniConfig, err = ini.Load("config.ini")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration file config.ini: %w", err)
 	}
 
 	config := &Config{
@@ -131,68 +124,74 @@ func GetPublicConfig() *PublicConfig {
 }
 
 func loadAppConfig() AppConfig {
+	// Environment can be overridden by APP_ENV environment variable
+	env := os.Getenv("APP_ENV")
+	if env == "" {
+		env = getConfigValue("app", "environment", "development")
+	}
+
 	return AppConfig{
-		Environment: Environment(getEnv("APP_ENV", "development")),
-		Name:        getEnv("APP_NAME", "CSmart Wails App"),
-		Version:     getEnv("APP_VERSION", "1.0.0"),
-		Debug:       getBoolEnv("APP_DEBUG", true),
-		HotReload:   getBoolEnv("HOT_RELOAD", true),
-		DevTools:    getBoolEnv("DEV_TOOLS", true),
-		MockAPI:     getBoolEnv("MOCK_API", false),
+		Environment: Environment(env),
+		Name:        getConfigValue("app", "name", "CSmart Wails App"),
+		Version:     getConfigValue("app", "version", "1.0.0"),
+		Debug:       getConfigBool("app", "debug", true),
+		HotReload:   getConfigBool("development", "hot_reload", true),
+		DevTools:    getConfigBool("development", "dev_tools", true),
+		MockAPI:     getConfigBool("development", "mock_api", false),
 	}
 }
 
 func loadAPIConfig() APIConfig {
 	return APIConfig{
-		BaseURL:     getEnv("API_BASE_URL", ""),
-		Timeout:     getDurationEnv("API_TIMEOUT", 30*time.Second),
-		RetryCount:  getIntEnv("API_RETRY_COUNT", 3),
-		RetryDelay:  getDurationEnv("API_RETRY_DELAY", 1*time.Second),
-		UserAgent:   getEnv("API_USER_AGENT", "CSmart-Wails/1.0"),
-		MaxIdleConn: getIntEnv("API_MAX_IDLE_CONN", 10),
+		BaseURL:     getConfigValue("api", "base_url", ""),
+		Timeout:     getConfigDuration("api", "timeout", 30*time.Second),
+		RetryCount:  getConfigInt("api", "retry_count", 3),
+		RetryDelay:  getConfigDuration("api", "retry_delay", 1*time.Second),
+		UserAgent:   getConfigValue("api", "user_agent", "CSmart-Wails/1.0"),
+		MaxIdleConn: getConfigInt("api", "max_idle_conn", 10),
 	}
 }
 
 func loadAuthConfig() AuthConfig {
 	return AuthConfig{
-		TokenExpiry:        getDurationEnv("AUTH_TOKEN_EXPIRY", 3600*time.Second),
-		RefreshThreshold:   getDurationEnv("AUTH_REFRESH_THRESHOLD", 300*time.Second),
-		MaxLoginAttempts:   getIntEnv("AUTH_MAX_LOGIN_ATTEMPTS", 5),
-		LockoutDuration:    getDurationEnv("AUTH_LOCKOUT_DURATION", 15*time.Minute),
-		SessionTimeout:     getDurationEnv("AUTH_SESSION_TIMEOUT", 24*time.Hour),
-		RememberMeDuration: getDurationEnv("AUTH_REMEMBER_ME_DURATION", 30*24*time.Hour),
+		TokenExpiry:        getConfigDuration("auth", "token_expiry", 3600*time.Second),
+		RefreshThreshold:   getConfigDuration("auth", "refresh_threshold", 300*time.Second),
+		MaxLoginAttempts:   getConfigInt("auth", "max_login_attempts", 5),
+		LockoutDuration:    getConfigDuration("auth", "lockout_duration", 15*time.Minute),
+		SessionTimeout:     getConfigDuration("auth", "session_timeout", 24*time.Hour),
+		RememberMeDuration: getConfigDuration("auth", "remember_me_duration", 30*24*time.Hour),
 	}
 }
 
 func loadLogConfig() LogConfig {
 	return LogConfig{
-		Level:      LogLevel(getEnv("LOG_LEVEL", "debug")),
-		Format:     LogFormat(getEnv("LOG_FORMAT", "json")),
-		Output:     LogOutput(getEnv("LOG_OUTPUT", "console")),
-		FilePath:   getEnv("LOG_FILE_PATH", "logs/app.log"),
-		MaxSize:    getIntEnv("LOG_MAX_SIZE", 100),
-		MaxBackups: getIntEnv("LOG_MAX_BACKUPS", 3),
-		MaxAge:     getIntEnv("LOG_MAX_AGE", 28),
-		Compress:   getBoolEnv("LOG_COMPRESS", true),
+		Level:      LogLevel(getConfigValue("log", "level", "debug")),
+		Format:     LogFormat(getConfigValue("log", "format", "json")),
+		Output:     LogOutput(getConfigValue("log", "output", "console")),
+		FilePath:   getConfigValue("log", "file_path", "logs/app.log"),
+		MaxSize:    getConfigInt("log", "max_size", 100),
+		MaxBackups: getConfigInt("log", "max_backups", 3),
+		MaxAge:     getConfigInt("log", "max_age", 28),
+		Compress:   getConfigBool("log", "compress", true),
 	}
 }
 
 func loadDatabaseConfig() DatabaseConfig {
 	return DatabaseConfig{
-		Host:         getEnv("DB_HOST", "localhost"),
-		Port:         getIntEnv("DB_PORT", 5432),
-		Name:         getEnv("DB_NAME", "csmart"),
-		Username:     getEnv("DB_USERNAME", ""),
-		Password:     getEnv("DB_PASSWORD", ""),
-		SSLMode:      getEnv("DB_SSL_MODE", "disable"),
-		MaxOpenConns: getIntEnv("DB_MAX_OPEN_CONNS", 25),
-		MaxIdleConns: getIntEnv("DB_MAX_IDLE_CONNS", 5),
-		ConnLifetime: getDurationEnv("DB_CONN_LIFETIME", 5*time.Minute),
+		Host:         getConfigValue("database", "host", "localhost"),
+		Port:         getConfigInt("database", "port", 5432),
+		Name:         getConfigValue("database", "name", "csmart"),
+		Username:     getConfigValue("database", "username", ""),
+		Password:     getConfigValue("database", "password", ""),
+		SSLMode:      getConfigValue("database", "ssl_mode", "disable"),
+		MaxOpenConns: getConfigInt("database", "max_open_conns", 25),
+		MaxIdleConns: getConfigInt("database", "max_idle_conns", 5),
+		ConnLifetime: getConfigDuration("database", "conn_lifetime", 5*time.Minute),
 	}
 }
 
 func loadSecurityConfig() SecurityConfig {
-	corsOrigins := getEnv("CORS_ORIGINS", "")
+	corsOrigins := getConfigValue("security", "cors_origins", "")
 	var origins []string
 	if corsOrigins != "" {
 		origins = strings.Split(corsOrigins, ",")
@@ -202,75 +201,93 @@ func loadSecurityConfig() SecurityConfig {
 	}
 
 	return SecurityConfig{
-		CORSEnabled:      getBoolEnv("CORS_ENABLED", true),
+		CORSEnabled:      getConfigBool("security", "cors_enabled", true),
 		CORSOrigins:      origins,
-		RateLimitEnabled: getBoolEnv("RATE_LIMIT_ENABLED", false),
-		RateLimitRPS:     getIntEnv("RATE_LIMIT_RPS", 100),
-		RateLimitBurst:   getIntEnv("RATE_LIMIT_BURST", 200),
-		CSRFEnabled:      getBoolEnv("CSRF_ENABLED", false),
-		CSRFSecret:       getEnv("CSRF_SECRET", ""),
+		RateLimitEnabled: getConfigBool("security", "rate_limit_enabled", false),
+		RateLimitRPS:     getConfigInt("security", "rate_limit_rps", 100),
+		RateLimitBurst:   getConfigInt("security", "rate_limit_burst", 200),
+		CSRFEnabled:      getConfigBool("security", "csrf_enabled", false),
+		CSRFSecret:       getConfigValue("security", "csrf_secret", ""),
 	}
 }
 
 func loadWindowConfig() WindowConfig {
 	return WindowConfig{
-		Width:       getIntEnv("WINDOW_WIDTH", 1200),
-		Height:      getIntEnv("WINDOW_HEIGHT", 800),
-		Resizable:   getBoolEnv("WINDOW_RESIZABLE", true),
-		Fullscreen:  getBoolEnv("WINDOW_FULLSCREEN", false),
-		Maximized:   getBoolEnv("WINDOW_MAXIMIZED", false),
-		Minimized:   getBoolEnv("WINDOW_MINIMIZED", false),
-		AlwaysOnTop: getBoolEnv("WINDOW_ALWAYS_ON_TOP", false),
+		Width:       getConfigInt("window", "width", 1200),
+		Height:      getConfigInt("window", "height", 800),
+		Resizable:   getConfigBool("window", "resizable", true),
+		Fullscreen:  getConfigBool("window", "fullscreen", false),
+		Maximized:   getConfigBool("window", "maximized", false),
+		Minimized:   getConfigBool("window", "minimized", false),
+		AlwaysOnTop: getConfigBool("window", "always_on_top", false),
 	}
 }
 
 func loadCacheConfig() CacheConfig {
 	return CacheConfig{
-		Enabled:            getBoolEnv("CACHE_ENABLED", false),
-		TTL:                getDurationEnv("CACHE_TTL", 3600*time.Second),
-		MaxSize:            getIntEnv("CACHE_MAX_SIZE", 100),
-		MaxItems:           getIntEnv("CACHE_MAX_ITEMS", 10000),
-		CompressionEnabled: getBoolEnv("COMPRESSION_ENABLED", false),
-		EvictionPolicy:     getEnv("CACHE_EVICTION_POLICY", "lru"),
+		Enabled:            getConfigBool("cache", "enabled", false),
+		TTL:                getConfigDuration("cache", "ttl", 3600*time.Second),
+		MaxSize:            getConfigInt("cache", "max_size", 100),
+		MaxItems:           getConfigInt("cache", "max_items", 10000),
+		CompressionEnabled: getConfigBool("cache", "compression_enabled", false),
+		EvictionPolicy:     getConfigValue("cache", "eviction_policy", "lru"),
 	}
 }
 
-// Helper functions for environment variable parsing
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+// Helper functions for INI configuration parsing
+func getConfigValue(section, key, defaultValue string) string {
+	if iniConfig == nil {
+		return defaultValue
 	}
-	return defaultValue
+	sec := iniConfig.Section(section)
+	if sec == nil {
+		return defaultValue
+	}
+	return sec.Key(key).MustString(defaultValue)
 }
 
-func getIntEnv(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
+func getConfigInt(section, key string, defaultValue int) int {
+	if iniConfig == nil {
+		return defaultValue
 	}
-	return defaultValue
+	sec := iniConfig.Section(section)
+	if sec == nil {
+		return defaultValue
+	}
+	return sec.Key(key).MustInt(defaultValue)
 }
 
-func getBoolEnv(key string, defaultValue bool) bool {
-	if value := os.Getenv(key); value != "" {
-		if boolValue, err := strconv.ParseBool(value); err == nil {
-			return boolValue
-		}
+func getConfigBool(section, key string, defaultValue bool) bool {
+	if iniConfig == nil {
+		return defaultValue
 	}
-	return defaultValue
+	sec := iniConfig.Section(section)
+	if sec == nil {
+		return defaultValue
+	}
+	return sec.Key(key).MustBool(defaultValue)
 }
 
-func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
-	if value := os.Getenv(key); value != "" {
-		// Try parsing as duration string first (e.g., "30s", "5m")
-		if duration, err := time.ParseDuration(value); err == nil {
-			return duration
-		}
-		// Try parsing as seconds
-		if seconds, err := strconv.Atoi(value); err == nil {
-			return time.Duration(seconds) * time.Second
-		}
+func getConfigDuration(section, key string, defaultValue time.Duration) time.Duration {
+	if iniConfig == nil {
+		return defaultValue
+	}
+	sec := iniConfig.Section(section)
+	if sec == nil {
+		return defaultValue
+	}
+	value := sec.Key(key).String()
+	if value == "" {
+		return defaultValue
+	}
+
+	// Try parsing as duration string first (e.g., "30s", "5m")
+	if duration, err := time.ParseDuration(value); err == nil {
+		return duration
+	}
+	// Try parsing as seconds
+	if seconds, err := strconv.Atoi(value); err == nil {
+		return time.Duration(seconds) * time.Second
 	}
 	return defaultValue
 }

@@ -305,11 +305,10 @@ func (ev *EnvironmentValidator) validateProduction(config *Config) []string {
 	return errors
 }
 
-// CheckEnvironmentFile validates that the correct environment file exists
+// CheckEnvironmentFile validates that the configuration file exists
 func CheckEnvironmentFile(env Environment) error {
-	envFile := fmt.Sprintf(".env.%s", env)
-	if _, err := os.Stat(envFile); os.IsNotExist(err) {
-		return fmt.Errorf("environment file %s does not exist", envFile)
+	if _, err := os.Stat("config.ini"); os.IsNotExist(err) {
+		return fmt.Errorf("configuration file config.ini does not exist")
 	}
 	return nil
 }

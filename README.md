@@ -122,9 +122,7 @@ After running `wails dev`, you'll have:
 
 The application uses environment-specific configuration files:
 
-- `.env.development` - Development settings
-- `.env.staging` - Staging settings
-- `.env.production` - Production settings
+- `config.ini` - Single configuration file for all environments
 
 ### GitHub Variables Setup
 
