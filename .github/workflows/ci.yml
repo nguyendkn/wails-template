@@ -50,12 +50,6 @@ jobs:
             goarch: amd64
             extension: ''
             upx_args: --best --lzma
-          - platform: linux-arm64
-            os: ubuntu-latest
-            goos: linux
-            goarch: arm64
-            extension: ''
-            upx_args: --best --lzma
 
     steps:
       # Checkout code
