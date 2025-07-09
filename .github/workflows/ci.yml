@@ -221,58 +221,58 @@ jobs:
 
           # Override with GitHub Variables if they exist
           if [ -n "${{ vars.APP_NAME }}" ]; then
-            sed -i "s/name = .*/name = ${{ vars.APP_NAME }}/" config.ini
+            sed -i "s#name = .*#name = ${{ vars.APP_NAME }}#" config.ini
           fi
           if [ -n "${{ vars.APP_DEBUG }}" ]; then
-            sed -i "s/debug = .*/debug = ${{ vars.APP_DEBUG }}/" config.ini
+            sed -i "s#debug = .*#debug = ${{ vars.APP_DEBUG }}#" config.ini
           fi
           if [ -n "${{ vars.API_BASE_URL }}" ]; then
-            sed -i "s|base_url = .*|base_url = ${{ vars.API_BASE_URL }}|" config.ini
+            sed -i "s#base_url = .*#base_url = ${{ vars.API_BASE_URL }}#" config.ini
           fi
           if [ -n "${{ vars.API_TIMEOUT }}" ]; then
-            sed -i "s/timeout = .*/timeout = ${{ vars.API_TIMEOUT }}/" config.ini
+            sed -i "s#timeout = .*#timeout = ${{ vars.API_TIMEOUT }}#" config.ini
           fi
           if [ -n "${{ vars.API_RETRY_COUNT }}" ]; then
-            sed -i "s/retry_count = .*/retry_count = ${{ vars.API_RETRY_COUNT }}/" config.ini
+            sed -i "s#retry_count = .*#retry_count = ${{ vars.API_RETRY_COUNT }}#" config.ini
           fi
           if [ -n "${{ vars.API_RETRY_DELAY }}" ]; then
-            sed -i "s/retry_delay = .*/retry_delay = ${{ vars.API_RETRY_DELAY }}/" config.ini
+            sed -i "s#retry_delay = .*#retry_delay = ${{ vars.API_RETRY_DELAY }}#" config.ini
           fi
           if [ -n "${{ vars.AUTH_TOKEN_EXPIRY }}" ]; then
-            sed -i "s/token_expiry = .*/token_expiry = ${{ vars.AUTH_TOKEN_EXPIRY }}/" config.ini
+            sed -i "s#token_expiry = .*#token_expiry = ${{ vars.AUTH_TOKEN_EXPIRY }}#" config.ini
           fi
           if [ -n "${{ vars.AUTH_REFRESH_THRESHOLD }}" ]; then
-            sed -i "s/refresh_threshold = .*/refresh_threshold = ${{ vars.AUTH_REFRESH_THRESHOLD }}/" config.ini
+            sed -i "s#refresh_threshold = .*#refresh_threshold = ${{ vars.AUTH_REFRESH_THRESHOLD }}#" config.ini
           fi
           if [ -n "${{ vars.LOG_LEVEL }}" ]; then
-            sed -i "s/level = .*/level = ${{ vars.LOG_LEVEL }}/" config.ini
+            sed -i "s#level = .*#level = ${{ vars.LOG_LEVEL }}#" config.ini
           fi
           if [ -n "${{ vars.LOG_FORMAT }}" ]; then
-            sed -i "s/format = .*/format = ${{ vars.LOG_FORMAT }}/" config.ini
+            sed -i "s#format = .*#format = ${{ vars.LOG_FORMAT }}#" config.ini
           fi
           if [ -n "${{ vars.LOG_OUTPUT }}" ]; then
-            sed -i "s/output = .*/output = ${{ vars.LOG_OUTPUT }}/" config.ini
+            sed -i "s#output = .*#output = ${{ vars.LOG_OUTPUT }}#" config.ini
           fi
           if [ -n "${{ vars.WINDOW_WIDTH }}" ]; then
-            sed -i "s/width = .*/width = ${{ vars.WINDOW_WIDTH }}/" config.ini
+            sed -i "s#width = .*#width = ${{ vars.WINDOW_WIDTH }}#" config.ini
           fi
           if [ -n "${{ vars.WINDOW_HEIGHT }}" ]; then
-            sed -i "s/height = .*/height = ${{ vars.WINDOW_HEIGHT }}/" config.ini
+            sed -i "s#height = .*#height = ${{ vars.WINDOW_HEIGHT }}#" config.ini
           fi
           if [ -n "${{ vars.WINDOW_RESIZABLE }}" ]; then
-            sed -i "s/resizable = .*/resizable = ${{ vars.WINDOW_RESIZABLE }}/" config.ini
+            sed -i "s#resizable = .*#resizable = ${{ vars.WINDOW_RESIZABLE }}#" config.ini
           fi
           if [ -n "${{ vars.WINDOW_FULLSCREEN }}" ]; then
-            sed -i "s/fullscreen = .*/fullscreen = ${{ vars.WINDOW_FULLSCREEN }}/" config.ini
+            sed -i "s#fullscreen = .*#fullscreen = ${{ vars.WINDOW_FULLSCREEN }}#" config.ini
           fi
           if [ -n "${{ vars.CORS_ENABLED }}" ]; then
-            sed -i "s/cors_enabled = .*/cors_enabled = ${{ vars.CORS_ENABLED }}/" config.ini
+            sed -i "s#cors_enabled = .*#cors_enabled = ${{ vars.CORS_ENABLED }}#" config.ini
           fi
           if [ -n "${{ vars.CORS_ORIGINS }}" ]; then
-            sed -i "s/cors_origins = .*/cors_origins = ${{ vars.CORS_ORIGINS }}/" config.ini
+            sed -i "s#cors_origins = .*#cors_origins = ${{ vars.CORS_ORIGINS }}#" config.ini
           fi
           if [ -n "${{ vars.RATE_LIMIT_ENABLED }}" ]; then
-            sed -i "s/rate_limit_enabled = .*/rate_limit_enabled = ${{ vars.RATE_LIMIT_ENABLED }}/" config.ini
+            sed -i "s#rate_limit_enabled = .*#rate_limit_enabled = ${{ vars.RATE_LIMIT_ENABLED }}#" config.ini
           fi
 
           echo "Generated config.ini file:"
