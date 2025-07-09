@@ -267,9 +267,9 @@ jobs:
           echo "Generated config.ini file:"
           cat config.ini
 
-      # Set up QEMU for ARM64 emulation
+      # Set up QEMU for Linux ARM64 emulation
       - name: Set up QEMU
-        if: matrix.os == 'ubuntu-latest' && matrix.goarch == 'arm64'
+        if: matrix.goarch == 'arm64' && matrix.goos == 'linux'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
@@ -285,10 +285,10 @@ jobs:
             pkg-config \
             build-essential
 
-          if [ "${{ matrix.goarch }}" = "arm64" ]; then
-            echo "Setting up ARM64 with QEMU emulation..."
+          if [ "${{ matrix.goarch }}" = "arm64" ] && [ "${{ matrix.goos }}" = "linux" ]; then
+            echo "Setting up Linux ARM64 with QEMU emulation..."
 
-            # For ARM64, we'll use Docker with QEMU emulation
+            # For Linux ARM64, we'll use Docker with QEMU emulation
             echo "ARM64_BUILD=true" >> $GITHUB_ENV
 
           else
@@ -336,7 +336,7 @@ jobs:
           if [ "${{ matrix.goarch }}" = "arm64" ] && [ "${{ matrix.goos }}" = "linux" ]; then
             echo "Building Linux ARM64 with Docker + QEMU..."
 
-            # Create Dockerfile for ARM64 build
+            # Create Dockerfile for Linux ARM64 build
             cat > Dockerfile.arm64 << 'EOF'
           FROM --platform=linux/arm64 ubuntu:24.04
 
@@ -387,6 +387,22 @@ jobs:
 
             # Clean up
             rm Dockerfile.arm64
+
+          elif [ "${{ matrix.goarch }}" = "arm64" ] && [ "${{ matrix.goos }}" = "windows" ]; then
+            echo "Building Windows ARM64 with pre-generated bindings..."
+
+            # Pre-generate bindings on native platform first
+            echo "Generating bindings on native platform..."
+            wails generate module
+
+            # Then build for ARM64 with existing bindings
+            echo "Building ARM64 binary with existing bindings..."
+            wails build \
+              -platform ${{ matrix.goos }}/${{ matrix.goarch }} \
+              -clean \
+              -skipbindings \
+              -ldflags "-s -w -X main.version=${{ steps.version.outputs.version }}" \
+              -o "wails-template-${{ matrix.platform }}${{ matrix.extension }}"
 
           else
             echo "Building natively..."
