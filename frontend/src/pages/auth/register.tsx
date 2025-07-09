@@ -7,7 +7,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useStore } from '@tanstack/react-store';
 import React, { useEffect } from 'react';
 
-import { useRegister } from '@/hooks/api/use-auth-api';
+import { useRegister } from '@/hooks/go/use-auth';
 import { useForm, validationSchemas } from '@/hooks/ui/use-form';
 import { authStore, authSelectors } from '@/store';
 import type { RegisterRequest } from '@/types';

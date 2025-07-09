@@ -9,5 +9,45 @@
   "author": {
     "name": "Dao Khoi Nguyen",
     "email": "dknguyen2304@gmail.com"
-  }
+  },
+  "info": {
+    "companyName": "CSmart",
+    "productName": "CSmart Wails App",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2025 CSmart. All rights reserved.",
+    "comments": "A modern desktop application built with Wails"
+  },
+  "nsisType": "multiple",
+  "obfuscated": false,
+  "garbleargs": "",
+  "buildType": "dev",
+  "verbosity": 1,
+  "moduleCleanup": true,
+  "skipModTidy": false,
+  "targets": [
+    {
+      "name": "development",
+      "description": "Development build with debug features",
+      "identifier": "com.csmart.wails-template.dev",
+      "env": {
+        "APP_ENV": "development"
+      }
+    },
+    {
+      "name": "staging",
+      "description": "Staging build for testing",
+      "identifier": "com.csmart.wails-template.staging",
+      "env": {
+        "APP_ENV": "staging"
+      }
+    },
+    {
+      "name": "production",
+      "description": "Production build optimized for release",
+      "identifier": "com.csmart.wails-template.prod",
+      "env": {
+        "APP_ENV": "production"
+      }
+    }
+  ]
 }

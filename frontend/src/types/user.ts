@@ -3,24 +3,30 @@
  * Based on the API user schemas and database structure
  */
 
-import type { Role } from './role';
+
 
 /**
  * User entity
  */
 export interface User {
   id: string;
+  username: string;
+  name: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  roles: Role[];
+  gender: string;
+  roles: string[];
+  scopes: string[];
+  created_at: string;
+  current_tenant_id: string;
+  // Legacy fields for compatibility
+  firstName?: string;
+  lastName?: string;
   permissions?: string[];
-  isActive: boolean;
+  isActive?: boolean;
   emailVerified?: boolean;
   emailVerifiedAt?: string;
   lastLoginAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   // Profile fields
   avatar?: string;
   phone?: string;

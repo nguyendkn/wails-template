@@ -9,7 +9,7 @@ import { User } from "./user";
  * Login request payload
  */
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -52,9 +52,10 @@ export interface ResetPasswordRequest {
  */
 export interface AuthResponse {
   user: User;
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
 }
 
 /**

@@ -5,7 +5,7 @@
 
 import { Store } from "@tanstack/react-store";
 
-import { apiClient } from "@/lib/api-client";
+// Note: No longer using API client for Wails app
 import { AuthState } from "@/types/auth";
 import { User } from "@/types/user";
 
@@ -66,13 +66,25 @@ export const authActions = {
    * Set authentication success
    */
   setAuthenticated: (user: User, accessToken: string, refreshToken: string) => {
-    // Update API client tokens
-    apiClient.setTokens(accessToken, refreshToken);
+    // Store tokens in localStorage for persistence
+    try {
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+    } catch {
+      // Ignore localStorage errors
+    }
+
+    // Add firstName and lastName for compatibility
+    const enhancedUser = {
+      ...user,
+      firstName: user.name?.split(' ')[0] || user.username,
+      lastName: user.name?.split(' ').slice(1).join(' ') || '',
+    };
 
     // Update store state
     authStore.setState({
       isAuthenticated: true,
-      user,
+      user: enhancedUser,
       accessToken,
       refreshToken,
       isLoading: false,
@@ -94,8 +106,13 @@ export const authActions = {
    * Clear authentication
    */
   logout: () => {
-    // Clear API client tokens
-    apiClient.clearAuth();
+    // Clear tokens from localStorage
+    try {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+    } catch {
+      // Ignore localStorage errors
+    }
 
     // Reset store state
     authStore.setState(initialAuthState);
@@ -111,28 +128,25 @@ export const authActions = {
     authActions.setLoading(true);
 
     try {
-      // Check if API client has tokens
-      if (!apiClient.isAuthenticated()) {
+      // Check if tokens exist in localStorage
+      const accessToken = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!accessToken || !refreshToken) {
         authActions.setLoading(false);
         return;
       }
 
-      // Try to fetch current user to validate token
-      const response = await apiClient.get("/profile");
-
-      if (response.success && response.data) {
-        const user = response.data as User;
-        const accessToken = localStorage.getItem("accessToken");
-        const refreshToken = localStorage.getItem("refreshToken");
-
-        if (accessToken && refreshToken) {
-          authActions.setAuthenticated(user, accessToken, refreshToken);
-        } else {
-          authActions.logout();
-        }
-      } else {
-        authActions.logout();
-      }
+      // For Wails app, we'll assume tokens are valid if they exist
+      // TODO: Implement token validation with Go backend if needed
+      authStore.setState({
+        isAuthenticated: true,
+        accessToken,
+        refreshToken,
+        isLoading: false,
+        error: null,
+        user: null, // User will be set when login is called
+      });
     } catch {
       // Failed to initialize auth
       authActions.logout();
@@ -142,23 +156,16 @@ export const authActions = {
   /**
    * Check if user has permission
    */
-  hasPermission: (action: string, resource: string): boolean => {
+  hasPermission: (_action: string, _resource: string): boolean => {
     const state = authStore.state;
 
     if (!state.isAuthenticated || !state.user) {
       return false;
     }
 
-    // Check user roles and their policies
-    return state.user.roles.some((role) =>
-      role.policies?.some(
-        (policy) =>
-          policy.isActive &&
-          policy.effect === "allow" &&
-          policy.actions.includes(action) &&
-          policy.resources.includes(resource)
-      )
-    );
+    // For now, return true for authenticated users
+    // TODO: Implement proper permission checking based on API response
+    return true;
   },
 
   /**
@@ -171,8 +178,7 @@ export const authActions = {
       return false;
     }
 
-    const userRoleNames = state.user.roles.map((role) => role.name);
-    return roleNames.some((roleName) => userRoleNames.includes(roleName));
+    return roleNames.some((roleName) => state.user!.roles.includes(roleName));
   },
 
   /**
@@ -185,7 +191,7 @@ export const authActions = {
       return [];
     }
 
-    return state.user.roles.map((role) => role.name);
+    return state.user!.roles;
   },
 };
 

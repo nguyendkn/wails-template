@@ -3,52 +3,52 @@
  * Custom hook for form handling using TanStack Form
  */
 
-import { useForm as useTanStackForm } from '@tanstack/react-form';
-import { z } from 'zod';
-
-import type { FormState, ApiErrorType } from '@/types';
+import { ApiErrorType } from "@/types/api";
+import { FormState } from "@/types/form";
+import { useForm as useTanStackForm } from "@tanstack/react-form";
+import { z } from "zod";
 
 // Validation schemas
 export const validationSchemas = {
   login: z.object({
-    email: z.string().email('Please enter a valid email address'),
-    password: z.string().min(1, 'Password is required'),
+    username: z.string().min(1, "Username is required"),
+    password: z.string().min(1, "Password is required"),
   }),
 
   register: z
     .object({
-      email: z.string().email('Please enter a valid email address'),
-      password: z.string().min(8, 'Password must be at least 8 characters'),
-      confirmPassword: z.string().min(1, 'Please confirm your password'),
-      firstName: z.string().min(1, 'First name is required'),
-      lastName: z.string().min(1, 'Last name is required'),
+      email: z.string().email("Please enter a valid email address"),
+      password: z.string().min(8, "Password must be at least 8 characters"),
+      confirmPassword: z.string().min(1, "Please confirm your password"),
+      firstName: z.string().min(1, "First name is required"),
+      lastName: z.string().min(1, "Last name is required"),
     })
-    .refine(data => data.password === data.confirmPassword, {
+    .refine((data) => data.password === data.confirmPassword, {
       message: "Passwords don't match",
-      path: ['confirmPassword'],
+      path: ["confirmPassword"],
     }),
 
   user: z.object({
-    email: z.string().email('Please enter a valid email address'),
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email("Please enter a valid email address"),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
     isActive: z.boolean().optional(),
   }),
 
   role: z.object({
-    name: z.string().min(1, 'Role name is required'),
+    name: z.string().min(1, "Role name is required"),
     description: z.string().optional(),
-    priority: z.number().min(0, 'Priority must be a positive number'),
+    priority: z.number().min(0, "Priority must be a positive number"),
     isActive: z.boolean().optional(),
   }),
 
   policy: z.object({
-    name: z.string().min(1, 'Policy name is required'),
+    name: z.string().min(1, "Policy name is required"),
     description: z.string().optional(),
-    effect: z.enum(['allow', 'deny']),
-    actions: z.array(z.string()).min(1, 'At least one action is required'),
-    resources: z.array(z.string()).min(1, 'At least one resource is required'),
-    priority: z.number().min(0, 'Priority must be a positive number'),
+    effect: z.enum(["allow", "deny"]),
+    actions: z.array(z.string()).min(1, "At least one action is required"),
+    resources: z.array(z.string()).min(1, "At least one resource is required"),
+    priority: z.number().min(0, "Priority must be a positive number"),
     isActive: z.boolean().optional(),
     conditions: z
       .object({
@@ -81,27 +81,27 @@ export const validationSchemas = {
   }),
   userCreate: z
     .object({
-      firstName: z.string().min(1, 'First name is required'),
-      lastName: z.string().min(1, 'Last name is required'),
-      email: z.string().email('Please enter a valid email address'),
-      password: z.string().min(8, 'Password must be at least 8 characters'),
-      confirmPassword: z.string().min(1, 'Please confirm your password'),
+      firstName: z.string().min(1, "First name is required"),
+      lastName: z.string().min(1, "Last name is required"),
+      email: z.string().email("Please enter a valid email address"),
+      password: z.string().min(8, "Password must be at least 8 characters"),
+      confirmPassword: z.string().min(1, "Please confirm your password"),
       roleIds: z.array(z.string()).optional(),
       isActive: z.boolean().default(true),
     })
-    .refine(data => data.password === data.confirmPassword, {
+    .refine((data) => data.password === data.confirmPassword, {
       message: "Passwords don't match",
-      path: ['confirmPassword'],
+      path: ["confirmPassword"],
     }),
   userEdit: z.object({
-    firstName: z.string().min(1, 'First name is required'),
-    lastName: z.string().min(1, 'Last name is required'),
-    email: z.string().email('Please enter a valid email address'),
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Please enter a valid email address"),
     roleIds: z.array(z.string()).optional(),
     isActive: z.boolean().default(true),
   }),
   roleForm: z.object({
-    name: z.string().min(1, 'Role name is required'),
+    name: z.string().min(1, "Role name is required"),
     description: z.string().optional(),
     policyIds: z.array(z.string()).default([]),
     isSystemRole: z.boolean().default(false),
@@ -162,7 +162,9 @@ export const useForm = <T extends object = Record<string, unknown>>({
     isSubmitting: form.state.isSubmitting,
     isValid: form.state.isValid,
     isDirty: form.state.isDirty,
-    touched: form.state.isTouched ? { [Object.keys(form.state.values)[0] || 'default']: true } : {},
+    touched: form.state.isTouched
+      ? { [Object.keys(form.state.values)[0] || "default"]: true }
+      : {},
   });
 
   /**
@@ -188,7 +190,7 @@ export const useForm = <T extends object = Record<string, unknown>>({
    * Set field error
    */
   const setFieldError = (fieldName: string, error: string) => {
-    form.setFieldMeta(fieldName, prev => ({
+    form.setFieldMeta(fieldName, (prev) => ({
       ...prev,
       errors: [error],
     }));
@@ -198,7 +200,7 @@ export const useForm = <T extends object = Record<string, unknown>>({
    * Clear field error
    */
   const clearFieldError = (fieldName: string) => {
-    form.setFieldMeta(fieldName, prev => ({
+    form.setFieldMeta(fieldName, (prev) => ({
       ...prev,
       errors: [],
     }));
@@ -210,7 +212,7 @@ export const useForm = <T extends object = Record<string, unknown>>({
   const validateField = async (fieldName: string) => {
     const field = form.getFieldInfo(fieldName);
     if (field) {
-      await form.validateField(fieldName, 'change');
+      await form.validateField(fieldName, "change");
     }
   };
 
@@ -218,7 +220,7 @@ export const useForm = <T extends object = Record<string, unknown>>({
    * Validate entire form
    */
   const validateForm = async () => {
-    await form.validateAllFields('change');
+    await form.validateAllFields("change");
     return form.state.isValid;
   };
 

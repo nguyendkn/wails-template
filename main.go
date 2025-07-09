@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"log"
+	"wails-template/internal/config"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -12,18 +14,25 @@ import (
 var assets embed.FS
 
 func main() {
+	// Load configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
 	// Create an instance of the app structure
 	app := NewApp()
 
-	// Calculate window size as 2/3 of typical screen size
-	// Assuming common screen resolutions (1920x1080, 1366x768, etc.)
-	// Using 2/3 of 1920x1080 as default
-	windowWidth := int(1920 * 2 / 3)  // ~1280
-	windowHeight := int(1080 * 2 / 3) // ~720
+	// Use window configuration from config
+	windowWidth := cfg.Window.Width
+	windowHeight := cfg.Window.Height
+
+	// Get app title from config
+	appTitle := cfg.App.Name
 
 	// Create application with options
-	err := wails.Run(&options.App{
-		Title:  "wails-template",
+	err = wails.Run(&options.App{
+		Title:  appTitle,
 		Width:  windowWidth,
 		Height: windowHeight,
 		AssetServer: &assetserver.Options{
@@ -37,6 +46,6 @@ func main() {
 	})
 
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatalf("Error starting application: %v", err)
 	}
 }
