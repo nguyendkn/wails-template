@@ -279,7 +279,7 @@ export const useMultiStepModal = () => {
       const currentStepData = steps[currentStep];
 
       openModal({
-        title: currentStepData.title,
+        title: currentStepData?.title || 'Step',
         content: React.createElement('div', { className: 'space-y-4' }, [
           // Step indicator
           React.createElement(
@@ -316,7 +316,7 @@ export const useMultiStepModal = () => {
           React.createElement(
             'div',
             { key: 'content' },
-            currentStepData.content
+            currentStepData?.content || null
           ),
           // Navigation buttons
           React.createElement(
@@ -359,7 +359,7 @@ export const useMultiStepModal = () => {
                       key: 'next',
                       type: 'button',
                       onClick: handleNext,
-                      disabled: currentStepData.canProceed === false,
+                      disabled: currentStepData?.canProceed === false,
                       className:
                         'px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed',
                     },

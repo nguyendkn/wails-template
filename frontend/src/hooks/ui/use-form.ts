@@ -162,6 +162,7 @@ export const useForm = <T extends object = Record<string, unknown>>({
     isSubmitting: form.state.isSubmitting,
     isValid: form.state.isValid,
     isDirty: form.state.isDirty,
+    touched: form.state.isTouched ? { [Object.keys(form.state.values)[0] || 'default']: true } : {},
   });
 
   /**

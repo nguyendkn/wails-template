@@ -33,14 +33,14 @@ export const RegisterPage: React.FC = () => {
       await registerMutation.mutateAsync(values);
     },
     onSuccess: () => {
-      navigate({ to: '/dashboard' });
+      navigate({ to: '/' }); // Navigate to home for now
     },
   });
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      navigate({ to: '/dashboard' });
+      navigate({ to: '/' }); // Navigate to home for now
     }
   }, [isAuthenticated, navigate]);
 

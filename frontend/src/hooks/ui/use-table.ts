@@ -116,7 +116,7 @@ export const useTable = <T>({
         const selectedRows = Object.keys(newSelection)
           .filter(key => newSelection[key])
           .map(key => memoizedData[parseInt(key)])
-          .filter(Boolean);
+          .filter((item): item is T => Boolean(item));
         onRowSelectionChange(selectedRows);
       }
     },
@@ -167,7 +167,7 @@ export const useTable = <T>({
     return Object.keys(rowSelection)
       .filter(key => rowSelection[key])
       .map(key => memoizedData[parseInt(key)])
-      .filter(Boolean);
+      .filter((item): item is T => Boolean(item));
   };
 
   /**

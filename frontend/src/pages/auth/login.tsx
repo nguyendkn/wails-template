@@ -95,7 +95,7 @@ export const LoginPage: React.FC = () => {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/placeholder.svg"
+          src="/images/placeholder.svg"
           alt="Login background"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />
