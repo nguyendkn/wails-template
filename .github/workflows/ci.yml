@@ -121,11 +121,16 @@ jobs:
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
+            # Remove 'v' prefix for semver validation in config.ini
+            SEMVER_VERSION=${VERSION#v}
           else
             VERSION="dev-$(git rev-parse --short HEAD)"
+            SEMVER_VERSION="$VERSION"
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "semver_version=$SEMVER_VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
+          echo "Semver Version: $SEMVER_VERSION"
 
       # Create configuration file for build from GitHub Variables
       - name: Create configuration file
@@ -139,7 +144,7 @@ jobs:
           # Application Environment
           environment = production
           name = CSmart
-          version = ${{ steps.version.outputs.version }}
+          version = ${{ steps.version.outputs.semver_version }}
           debug = false
 
           [api]
