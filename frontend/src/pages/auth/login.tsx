@@ -14,10 +14,11 @@ import { useForm, validationSchemas } from "@/hooks/ui/use-form";
 import { authStore, authSelectors } from "@/store";
 import { RouteSearchParams } from "@/types/route";
 import { LoginRequest } from "@/types/auth";
+import placeholderImage from "@/assets/images/placeholder.svg";
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const search = useSearch({ from: "/" });
+  const search = useSearch({ strict: false });
   const redirectTo = (search as RouteSearchParams)?.redirect || "/dashboard";
 
   const isAuthenticated = useStore(authStore, authSelectors.isAuthenticated);
@@ -95,7 +96,7 @@ export const LoginPage: React.FC = () => {
       </div>
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/images/placeholder.svg"
+          src={placeholderImage}
           alt="Login background"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />

@@ -21,6 +21,11 @@ export interface User {
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
+  // Profile fields
+  avatar?: string;
+  phone?: string;
+  address?: string;
+  bio?: string;
 }
 
 /**

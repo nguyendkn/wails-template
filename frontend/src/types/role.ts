@@ -6,6 +6,15 @@
 import type { Policy } from './policy';
 
 /**
+ * Permission entity
+ */
+export interface Permission {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+/**
  * Role entity
  */
 export interface Role {
@@ -16,6 +25,7 @@ export interface Role {
   isSystemRole: boolean;
   metadata?: Record<string, unknown>;
   policies?: Policy[];
+  permissions?: Permission[];
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

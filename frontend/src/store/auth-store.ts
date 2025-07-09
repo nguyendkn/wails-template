@@ -3,10 +3,11 @@
  * Global state management for authentication using TanStack Store
  */
 
-import { Store } from '@tanstack/react-store';
+import { Store } from "@tanstack/react-store";
 
-import { apiClient } from '@/lib/api-client';
-import type { AuthState, User } from '@/types';
+import { apiClient } from "@/lib/api-client";
+import { AuthState } from "@/types/auth";
+import { User } from "@/types/user";
 
 /**
  * Initial authentication state
@@ -33,7 +34,7 @@ export const authActions = {
    * Set loading state
    */
   setLoading: (isLoading: boolean) => {
-    authStore.setState(state => ({
+    authStore.setState((state) => ({
       ...state,
       isLoading,
       error: isLoading ? null : state.error,
@@ -44,10 +45,20 @@ export const authActions = {
    * Set error state
    */
   setError: (error: string | null) => {
-    authStore.setState(state => ({
+    authStore.setState((state) => ({
       ...state,
       error,
       isLoading: false,
+    }));
+  },
+
+  /**
+   * Clear error state
+   */
+  clearError: () => {
+    authStore.setState((state) => ({
+      ...state,
+      error: null,
     }));
   },
 
@@ -73,7 +84,7 @@ export const authActions = {
    * Update user data
    */
   updateUser: (user: Partial<User>) => {
-    authStore.setState(state => ({
+    authStore.setState((state) => ({
       ...state,
       user: state.user ? { ...state.user, ...user } : null,
     }));
@@ -90,7 +101,7 @@ export const authActions = {
     authStore.setState(initialAuthState);
 
     // Emit logout event for other components
-    window.dispatchEvent(new CustomEvent('auth:logout'));
+    window.dispatchEvent(new CustomEvent("auth:logout"));
   },
 
   /**
@@ -107,12 +118,12 @@ export const authActions = {
       }
 
       // Try to fetch current user to validate token
-      const response = await apiClient.get('/profile');
+      const response = await apiClient.get("/profile");
 
       if (response.success && response.data) {
         const user = response.data as User;
-        const accessToken = localStorage.getItem('accessToken');
-        const refreshToken = localStorage.getItem('refreshToken');
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
 
         if (accessToken && refreshToken) {
           authActions.setAuthenticated(user, accessToken, refreshToken);
@@ -139,11 +150,11 @@ export const authActions = {
     }
 
     // Check user roles and their policies
-    return state.user.roles.some(role =>
+    return state.user.roles.some((role) =>
       role.policies?.some(
-        policy =>
+        (policy) =>
           policy.isActive &&
-          policy.effect === 'allow' &&
+          policy.effect === "allow" &&
           policy.actions.includes(action) &&
           policy.resources.includes(resource)
       )
@@ -160,8 +171,8 @@ export const authActions = {
       return false;
     }
 
-    const userRoleNames = state.user.roles.map(role => role.name);
-    return roleNames.some(roleName => userRoleNames.includes(roleName));
+    const userRoleNames = state.user.roles.map((role) => role.name);
+    return roleNames.some((roleName) => userRoleNames.includes(roleName));
   },
 
   /**
@@ -174,7 +185,7 @@ export const authActions = {
       return [];
     }
 
-    return state.user.roles.map(role => role.name);
+    return state.user.roles.map((role) => role.name);
   },
 };
 

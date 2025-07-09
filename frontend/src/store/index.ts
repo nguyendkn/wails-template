@@ -4,18 +4,18 @@
  */
 
 // Authentication store
-export { authStore, authActions, authSelectors } from './auth-store';
+export { authStore, authActions, authSelectors } from "./auth-store";
 
 // Application store
-export { appStore, appActions, appSelectors } from './app-store';
+export { appStore, appActions, appSelectors } from "./app-store";
 
 /**
  * Store initialization
  * Call this function to initialize all stores
  */
 export const initializeStores = async () => {
-  const { appActions } = await import('./app-store');
-  const { authActions } = await import('./auth-store');
+  const { appActions } = await import("./app-store");
+  const { authActions } = await import("./auth-store");
 
   // Initialize application store
   appActions.initialize();
@@ -29,8 +29,8 @@ export const initializeStores = async () => {
  * Call this function to cleanup all stores
  */
 export const cleanupStores = async () => {
-  const { appActions } = await import('./app-store');
-  const { authActions } = await import('./auth-store');
+  const { appActions } = await import("./app-store");
+  const { authActions } = await import("./auth-store");
 
   // Logout user
   authActions.logout();
@@ -58,8 +58,8 @@ export const storeUtils = {
    * Get combined loading state from all stores
    */
   isAnyLoading: async () => {
-    const { authSelectors } = await import('./auth-store');
-    const { appSelectors } = await import('./app-store');
+    const { authSelectors } = await import("./auth-store");
+    const { appSelectors } = await import("./app-store");
     return authSelectors.isLoading() || appSelectors.isGlobalLoading();
   },
 
@@ -67,7 +67,7 @@ export const storeUtils = {
    * Get all active errors from stores
    */
   getAllErrors: async () => {
-    const { authSelectors } = await import('./auth-store');
+    const { authSelectors } = await import("./auth-store");
     const errors: string[] = [];
 
     const authError = authSelectors.getError();
@@ -82,7 +82,7 @@ export const storeUtils = {
    * Subscribe to authentication changes
    */
   subscribeToAuth: async (callback: (isAuthenticated: boolean) => void) => {
-    const { authStore, authSelectors } = await import('./auth-store');
+    const { authStore, authSelectors } = await import("./auth-store");
     return authStore.subscribe(() => {
       callback(authSelectors.isAuthenticated());
     });
@@ -92,7 +92,7 @@ export const storeUtils = {
    * Subscribe to theme changes
    */
   subscribeToTheme: async (callback: (theme: string) => void) => {
-    const { appStore, appSelectors } = await import('./app-store');
+    const { appStore, appSelectors } = await import("./app-store");
     return appStore.subscribe(() => {
       callback(appSelectors.getTheme());
     });

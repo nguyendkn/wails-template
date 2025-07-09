@@ -1,6 +1,6 @@
 /**
- * Index Page
- * Main index page for authenticated users
+ * Dashboard Page
+ * Main dashboard for authenticated users
  */
 
 import React from "react";
@@ -47,9 +47,9 @@ const recentActivities = [
 ];
 
 /**
- * Index Page Component
+ * Dashboard Page Component
  */
-const Page: React.FC = () => {
+const DashboardPage: React.FC = () => {
   const { user } = useAuth();
 
   return (
@@ -136,4 +136,4 @@ const Page: React.FC = () => {
   );
 };
 
-export default Page;
+export default DashboardPage;
