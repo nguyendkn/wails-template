@@ -114,6 +114,95 @@ jobs:
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
 
+      # Get version from tag
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="dev-$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      # Create environment file for build from GitHub Variables
+      - name: Create environment file
+        run: |
+          cat > .env << EOF
+          APP_ENV=development
+          APP_VERSION=${{ steps.version.outputs.version }}
+          EOF
+
+          # Add GitHub Variables if they exist
+          if [ -n "${{ vars.APP_NAME }}" ]; then
+            echo "APP_NAME=${{ vars.APP_NAME }}" >> .env
+          fi
+          if [ -n "${{ vars.APP_DEBUG }}" ]; then
+            echo "APP_DEBUG=${{ vars.APP_DEBUG }}" >> .env
+          fi
+          if [ -n "${{ vars.API_BASE_URL }}" ]; then
+            echo "API_BASE_URL=${{ vars.API_BASE_URL }}" >> .env
+          fi
+          if [ -n "${{ vars.API_TIMEOUT }}" ]; then
+            echo "API_TIMEOUT=${{ vars.API_TIMEOUT }}" >> .env
+          fi
+          if [ -n "${{ vars.API_RETRY_COUNT }}" ]; then
+            echo "API_RETRY_COUNT=${{ vars.API_RETRY_COUNT }}" >> .env
+          fi
+          if [ -n "${{ vars.API_RETRY_DELAY }}" ]; then
+            echo "API_RETRY_DELAY=${{ vars.API_RETRY_DELAY }}" >> .env
+          fi
+          if [ -n "${{ vars.AUTH_TOKEN_EXPIRY }}" ]; then
+            echo "AUTH_TOKEN_EXPIRY=${{ vars.AUTH_TOKEN_EXPIRY }}" >> .env
+          fi
+          if [ -n "${{ vars.AUTH_REFRESH_THRESHOLD }}" ]; then
+            echo "AUTH_REFRESH_THRESHOLD=${{ vars.AUTH_REFRESH_THRESHOLD }}" >> .env
+          fi
+          if [ -n "${{ vars.LOG_LEVEL }}" ]; then
+            echo "LOG_LEVEL=${{ vars.LOG_LEVEL }}" >> .env
+          fi
+          if [ -n "${{ vars.LOG_FORMAT }}" ]; then
+            echo "LOG_FORMAT=${{ vars.LOG_FORMAT }}" >> .env
+          fi
+          if [ -n "${{ vars.LOG_OUTPUT }}" ]; then
+            echo "LOG_OUTPUT=${{ vars.LOG_OUTPUT }}" >> .env
+          fi
+          if [ -n "${{ vars.WINDOW_WIDTH }}" ]; then
+            echo "WINDOW_WIDTH=${{ vars.WINDOW_WIDTH }}" >> .env
+          fi
+          if [ -n "${{ vars.WINDOW_HEIGHT }}" ]; then
+            echo "WINDOW_HEIGHT=${{ vars.WINDOW_HEIGHT }}" >> .env
+          fi
+          if [ -n "${{ vars.WINDOW_RESIZABLE }}" ]; then
+            echo "WINDOW_RESIZABLE=${{ vars.WINDOW_RESIZABLE }}" >> .env
+          fi
+          if [ -n "${{ vars.WINDOW_FULLSCREEN }}" ]; then
+            echo "WINDOW_FULLSCREEN=${{ vars.WINDOW_FULLSCREEN }}" >> .env
+          fi
+          if [ -n "${{ vars.CORS_ENABLED }}" ]; then
+            echo "CORS_ENABLED=${{ vars.CORS_ENABLED }}" >> .env
+          fi
+          if [ -n "${{ vars.CORS_ORIGINS }}" ]; then
+            echo "CORS_ORIGINS=${{ vars.CORS_ORIGINS }}" >> .env
+          fi
+          if [ -n "${{ vars.RATE_LIMIT_ENABLED }}" ]; then
+            echo "RATE_LIMIT_ENABLED=${{ vars.RATE_LIMIT_ENABLED }}" >> .env
+          fi
+          if [ -n "${{ vars.HOT_RELOAD }}" ]; then
+            echo "HOT_RELOAD=${{ vars.HOT_RELOAD }}" >> .env
+          fi
+          if [ -n "${{ vars.DEV_TOOLS }}" ]; then
+            echo "DEV_TOOLS=${{ vars.DEV_TOOLS }}" >> .env
+          fi
+          if [ -n "${{ vars.MOCK_API }}" ]; then
+            echo "MOCK_API=${{ vars.MOCK_API }}" >> .env
+          fi
+
+          echo "Generated .env file:"
+          cat .env
+
       # Install UPX for binary compression
       - name: Install UPX (Windows)
         if: matrix.os == 'windows-latest'
@@ -133,19 +222,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y upx
-
-      # Get version from tag
-      - name: Get version
-        id: version
-        shell: bash
-        run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-          else
-            VERSION="dev-$(git rev-parse --short HEAD)"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
 
       # Build with Wails
       - name: Build application
