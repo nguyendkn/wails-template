@@ -34,6 +34,12 @@ jobs:
             goarch: amd64
             extension: .exe
             upx_args: --best --lzma
+          - platform: windows-arm64
+            os: windows-latest
+            goos: windows
+            goarch: arm64
+            extension: .exe
+            upx_args: --best --lzma
 
           # macOS builds
           - platform: darwin-amd64
