@@ -134,6 +134,7 @@ jobs:
 
       # Create configuration file for build from GitHub Variables
       - name: Create configuration file
+        shell: bash
         run: |
           cat > config.ini << 'EOF'
           # Application Configuration
@@ -224,64 +225,52 @@ jobs:
           mock_api = false
           EOF
 
+          # Cross-platform sed function
+          update_config() {
+            local pattern="$1"
+            local replacement="$2"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+              # macOS (BSD sed)
+              sed -i '' "s#${pattern}#${replacement}#" config.ini
+            else
+              # Linux and Windows (GNU sed)
+              sed -i "s#${pattern}#${replacement}#" config.ini
+            fi
+          }
+
           # Override with GitHub Variables if they exist
-          if [ -n "${{ vars.APP_NAME }}" ]; then
-            sed -i "s#name = .*#name = ${{ vars.APP_NAME }}#" config.ini
-          fi
-          if [ -n "${{ vars.APP_DEBUG }}" ]; then
-            sed -i "s#debug = .*#debug = ${{ vars.APP_DEBUG }}#" config.ini
-          fi
-          if [ -n "${{ vars.API_BASE_URL }}" ]; then
-            sed -i "s#base_url = .*#base_url = ${{ vars.API_BASE_URL }}#" config.ini
-          fi
-          if [ -n "${{ vars.API_TIMEOUT }}" ]; then
-            sed -i "s#timeout = .*#timeout = ${{ vars.API_TIMEOUT }}#" config.ini
-          fi
-          if [ -n "${{ vars.API_RETRY_COUNT }}" ]; then
-            sed -i "s#retry_count = .*#retry_count = ${{ vars.API_RETRY_COUNT }}#" config.ini
-          fi
-          if [ -n "${{ vars.API_RETRY_DELAY }}" ]; then
-            sed -i "s#retry_delay = .*#retry_delay = ${{ vars.API_RETRY_DELAY }}#" config.ini
-          fi
-          if [ -n "${{ vars.AUTH_TOKEN_EXPIRY }}" ]; then
-            sed -i "s#token_expiry = .*#token_expiry = ${{ vars.AUTH_TOKEN_EXPIRY }}#" config.ini
-          fi
-          if [ -n "${{ vars.AUTH_REFRESH_THRESHOLD }}" ]; then
-            sed -i "s#refresh_threshold = .*#refresh_threshold = ${{ vars.AUTH_REFRESH_THRESHOLD }}#" config.ini
-          fi
-          if [ -n "${{ vars.LOG_LEVEL }}" ]; then
-            sed -i "s#level = .*#level = ${{ vars.LOG_LEVEL }}#" config.ini
-          fi
-          if [ -n "${{ vars.LOG_FORMAT }}" ]; then
-            sed -i "s#format = .*#format = ${{ vars.LOG_FORMAT }}#" config.ini
-          fi
-          if [ -n "${{ vars.LOG_OUTPUT }}" ]; then
-            sed -i "s#output = .*#output = ${{ vars.LOG_OUTPUT }}#" config.ini
-          fi
-          if [ -n "${{ vars.WINDOW_WIDTH }}" ]; then
-            sed -i "s#width = .*#width = ${{ vars.WINDOW_WIDTH }}#" config.ini
-          fi
-          if [ -n "${{ vars.WINDOW_HEIGHT }}" ]; then
-            sed -i "s#height = .*#height = ${{ vars.WINDOW_HEIGHT }}#" config.ini
-          fi
-          if [ -n "${{ vars.WINDOW_RESIZABLE }}" ]; then
-            sed -i "s#resizable = .*#resizable = ${{ vars.WINDOW_RESIZABLE }}#" config.ini
-          fi
-          if [ -n "${{ vars.WINDOW_FULLSCREEN }}" ]; then
-            sed -i "s#fullscreen = .*#fullscreen = ${{ vars.WINDOW_FULLSCREEN }}#" config.ini
-          fi
-          if [ -n "${{ vars.CORS_ENABLED }}" ]; then
-            sed -i "s#cors_enabled = .*#cors_enabled = ${{ vars.CORS_ENABLED }}#" config.ini
-          fi
-          if [ -n "${{ vars.CORS_ORIGINS }}" ]; then
-            sed -i "s#cors_origins = .*#cors_origins = ${{ vars.CORS_ORIGINS }}#" config.ini
-          fi
-          if [ -n "${{ vars.RATE_LIMIT_ENABLED }}" ]; then
-            sed -i "s#rate_limit_enabled = .*#rate_limit_enabled = ${{ vars.RATE_LIMIT_ENABLED }}#" config.ini
-          fi
+          [ -n "${{ vars.APP_NAME }}" ] && update_config "name = .*" "name = ${{ vars.APP_NAME }}"
+          [ -n "${{ vars.APP_DEBUG }}" ] && update_config "debug = .*" "debug = ${{ vars.APP_DEBUG }}"
+          [ -n "${{ vars.API_BASE_URL }}" ] && update_config "base_url = .*" "base_url = ${{ vars.API_BASE_URL }}"
+          [ -n "${{ vars.API_TIMEOUT }}" ] && update_config "timeout = .*" "timeout = ${{ vars.API_TIMEOUT }}"
+          [ -n "${{ vars.API_RETRY_COUNT }}" ] && update_config "retry_count = .*" "retry_count = ${{ vars.API_RETRY_COUNT }}"
+          [ -n "${{ vars.API_RETRY_DELAY }}" ] && update_config "retry_delay = .*" "retry_delay = ${{ vars.API_RETRY_DELAY }}"
+          [ -n "${{ vars.AUTH_TOKEN_EXPIRY }}" ] && update_config "token_expiry = .*" "token_expiry = ${{ vars.AUTH_TOKEN_EXPIRY }}"
+          [ -n "${{ vars.AUTH_REFRESH_THRESHOLD }}" ] && update_config "refresh_threshold = .*" "refresh_threshold = ${{ vars.AUTH_REFRESH_THRESHOLD }}"
+          [ -n "${{ vars.LOG_LEVEL }}" ] && update_config "level = .*" "level = ${{ vars.LOG_LEVEL }}"
+          [ -n "${{ vars.LOG_FORMAT }}" ] && update_config "format = .*" "format = ${{ vars.LOG_FORMAT }}"
+          [ -n "${{ vars.LOG_OUTPUT }}" ] && update_config "output = .*" "output = ${{ vars.LOG_OUTPUT }}"
+          [ -n "${{ vars.WINDOW_WIDTH }}" ] && update_config "width = .*" "width = ${{ vars.WINDOW_WIDTH }}"
+          [ -n "${{ vars.WINDOW_HEIGHT }}" ] && update_config "height = .*" "height = ${{ vars.WINDOW_HEIGHT }}"
+          [ -n "${{ vars.WINDOW_RESIZABLE }}" ] && update_config "resizable = .*" "resizable = ${{ vars.WINDOW_RESIZABLE }}"
+          [ -n "${{ vars.WINDOW_FULLSCREEN }}" ] && update_config "fullscreen = .*" "fullscreen = ${{ vars.WINDOW_FULLSCREEN }}"
+          [ -n "${{ vars.CORS_ENABLED }}" ] && update_config "cors_enabled = .*" "cors_enabled = ${{ vars.CORS_ENABLED }}"
+          [ -n "${{ vars.CORS_ORIGINS }}" ] && update_config "cors_origins = .*" "cors_origins = ${{ vars.CORS_ORIGINS }}"
+          [ -n "${{ vars.RATE_LIMIT_ENABLED }}" ] && update_config "rate_limit_enabled = .*" "rate_limit_enabled = ${{ vars.RATE_LIMIT_ENABLED }}"
 
           echo "Generated config.ini file:"
           cat config.ini
+
+      # Install Linux dependencies for Wails
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.0-dev \
+            pkg-config \
+            build-essential
 
       # Install UPX for binary compression
       - name: Install UPX (Windows)
@@ -300,7 +289,6 @@ jobs:
       - name: Install UPX (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get update
           sudo apt-get install -y upx
 
       # Build with Wails
